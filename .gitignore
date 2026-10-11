@@ -1,0 +1,8 @@
+bin/
+obj/
+.vs/
+*.user
+
+# Uploaded QR images (keep the folder)
+wwwroot/uploads/qr/*
+!wwwroot/uploads/qr/.gitkeep
