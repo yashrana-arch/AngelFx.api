@@ -28,7 +28,6 @@ VITE_USE_MOCK=false
 | `Database:MySqlVersion` | Your MySQL server version, e.g. `8.0.36-mysql` (or `10.11.0-mariadb`). Run `SELECT VERSION();` to check. |
 | `Database:MigrateOnStartup` | `true` creates the database and applies migrations automatically. Set it to `false` if you run the SQL script yourself. |
 | `Jwt:Key` | Token signing secret, at least 32 characters. The dev key is in `appsettings.Development.json`. In production, set the `Jwt__Key` environment variable. |
-| `Cors:Origins` | Frontend URLs allowed to call the API (default `http://localhost:5173`). |
 
 ### Connection string (MySQL on AWS EC2)
 

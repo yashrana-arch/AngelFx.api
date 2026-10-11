@@ -91,8 +91,8 @@ builder.Services
         });
 
 /* ---------- CORS for the React app ---------- */
-var origins = config.GetSection("Cors:Origins").Get<string[]>() ?? ["http://localhost:5173"];
-builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.WithOrigins(origins).AllowAnyHeader().AllowAnyMethod()));
+// Any origin may call the API. Safe because auth uses a Bearer token header, not cookies.
+builder.Services.AddCors(o => o.AddDefaultPolicy(p => p.AllowAnyOrigin().AllowAnyHeader().AllowAnyMethod()));
 
 /* ---------- Swagger ---------- */
 builder.Services.AddEndpointsApiExplorer();
