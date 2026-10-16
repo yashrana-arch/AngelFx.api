@@ -18,8 +18,10 @@ public class User
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
     public Portfolio? Portfolio { get; set; }
+    public KycDetails? Kyc { get; set; }
     public List<Position> Positions { get; set; } = [];
     public List<Trade> Trades { get; set; } = [];
     public List<LedgerEntry> LedgerEntries { get; set; } = [];
     public List<Withdrawal> Withdrawals { get; set; } = [];
+    public List<PaymentProof> PaymentProofs { get; set; } = [];
 }

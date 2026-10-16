@@ -15,14 +15,15 @@ public class AccountService(AppDbContext db)
     /* ---------- Users ---------- */
 
     public async Task<User> GetClientAsync(Guid userId, CancellationToken ct) =>
-        await db.Users.FirstOrDefaultAsync(u => u.Id == userId && u.Role == Roles.Client, ct)
+        await db.Users.Include(u => u.Kyc).FirstOrDefaultAsync(u => u.Id == userId && u.Role == Roles.Client, ct)
         ?? throw ApiException.NotFound("Client not found");
 
     public async Task<List<UserDto>> ListClientsAsync(CancellationToken ct) =>
         await db.Users.AsNoTracking()
             .Where(u => u.Role == Roles.Client)
             .OrderBy(u => u.Name)
-            .Select(u => new UserDto(u.Id, u.Name, u.Email, u.Phone, u.Role, u.ClientCode, u.Verified))
+            .Select(u => new UserDto(u.Id, u.Name, u.Email, u.Phone, u.Role, u.ClientCode, u.Verified,
+                u.Kyc != null ? u.Kyc.Status : null))
             .ToListAsync(ct);
 
     public async Task<UserDto> CreateClientAsync(NewClientInput input, CancellationToken ct) =>

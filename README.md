@@ -64,15 +64,19 @@ dotnet tool run dotnet-ef migrations add <Name> -o Data/Migrations
 
 # apply to the database (or just start the API):
 dotnet tool run dotnet-ef database update
-
-# regenerate the plain SQL script:
-dotnet tool run dotnet-ef migrations script --idempotent -o Database/VeltrexDb.sql
 ```
 
-`Database/VeltrexDb.sql` is idempotent, so it's safe to run more than once. To run it by hand:
+### The SQL script
 
-1. Create the database: `CREATE DATABASE VeltrexDb CHARACTER SET utf8mb4;`
-2. Run the script against it, in MySQL Workbench or with `mysql -h 65.0.87.56 -u veltrex -p VeltrexDb < Database/VeltrexDb.sql`. The script uses `DELIMITER`, so use one of those tools rather than a plain query window.
+`Database/VeltrexDb.sql` is the whole schema in one plain MySQL file, for setting the database up by hand:
+
+- It has no `DELIMITER` or stored procedures, so it runs in any client: MySQL Workbench, DBeaver, phpMyAdmin, HeidiSQL, or `mysql -h 65.0.87.56 -u veltrex -p VeltrexDb < Database/VeltrexDb.sql`.
+- Every table uses `CREATE TABLE IF NOT EXISTS`, so it's safe to run more than once. Use the same file for a new database and for upgrading an existing one; only missing tables are created.
+- The last statement records every EF migration in `__EFMigrationsHistory`, so the API won't try to create the tables again on startup.
+
+For a new database, run `CREATE DATABASE VeltrexDb CHARACTER SET utf8mb4;` and `USE VeltrexDb;` first.
+
+The file is maintained by hand. Don't regenerate it with `dotnet-ef migrations script`, which produces the `DELIMITER` format most clients reject. When you add a migration, add its `CREATE TABLE IF NOT EXISTS` (or other change) to the file, plus its migration ID in the final `INSERT IGNORE`.
 
 The script creates every table:
 
@@ -85,6 +89,8 @@ The script creates every table:
 | `LedgerEntries` | Credits and debits |
 | `PaymentSettings` | Single row shared by all clients: UPI QR image path, UPI ID, bank name, account holder, account number, IFSC, note |
 | `Withdrawals` | Withdrawal requests and the admin's decision |
+| `KycDetails` | One row per client once they submit KYC: personal details, address, bank account, Aadhaar and PAN, review status (`Submitted`, `Approved`, `Rejected`) and admin note |
+| `PaymentProofs` | Deposit screenshots clients upload after paying. The image bytes are stored in the row (`MEDIUMBLOB`, max 5 MB), with the uploader, optional amount and UTR reference, review status (`Pending`, `Approved`, `Rejected`) and admin note |
 | `MarketIndices`, `Stocks` | Market watch data shared by all clients |
 
 ## Endpoints
@@ -109,5 +115,18 @@ All routes are under `/api`. Errors are always returned as `{ "message": "..." }
 | PUT, DELETE | `/admin/users/{id}/trades/{tradeId}` | admin |
 | GET | `/admin/users/{id}/withdrawals` | admin |
 | PUT | `/admin/users/{id}/withdrawals/{withdrawalId}` (`{ status, adminNote }`) | admin |
+| GET, PUT | `/client/kyc` (GET returns 204 until submitted; PUT submits or re-submits, refused once approved) | client |
+| GET, PUT | `/admin/users/{id}/kyc` (admin can fill in or correct details; the review status is kept) | admin |
+| PUT | `/admin/users/{id}/kyc/status` (`{ status, adminNote }`; `APPROVED` also marks the client verified, `REJECTED` un-verifies) | admin |
+
+| GET, POST | `/client/payment-proofs` (POST is multipart: `image` (PNG/JPG/WEBP/GIF, max 5 MB), `amount?`, `reference?`) | client |
+| GET | `/client/payment-proofs/{proofId}/image` | client |
+| GET | `/admin/payment-proofs` (`?status=PENDING` for the review queue) | admin |
+| GET | `/admin/users/{id}/payment-proofs`, `/admin/users/{id}/payment-proofs/{proofId}/image` | admin |
+| PUT | `/admin/users/{id}/payment-proofs/{proofId}` (`{ status, adminNote }`; approving doesn't credit the ledger) | admin |
+
+Screenshot images are only served through those authenticated `/image` endpoints, so the frontend fetches them with the token rather than using a plain `<img src>`.
+
+Every user object includes `kycStatus`: `null` until KYC is submitted, then `SUBMITTED`, `APPROVED` or `REJECTED`.
 
 Uploaded QR images are stored in `wwwroot/uploads/qr/` and served at `/uploads/qr/...`.

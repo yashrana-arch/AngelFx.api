@@ -10,7 +10,7 @@ namespace VeltrexAPI.Controllers;
 [ApiController]
 [Route("api/admin/users")]
 [Authorize(Roles = Roles.Admin)]
-public class AdminClientsController(AccountService accounts) : ControllerBase
+public class AdminClientsController(AccountService accounts, KycService kyc) : ControllerBase
 {
     /* ---------- Clients ---------- */
 
@@ -26,6 +26,23 @@ public class AdminClientsController(AccountService accounts) : ControllerBase
     [HttpPut("{userId:guid}")]
     public Task<UserDto> Update(Guid userId, ClientUpdate input, CancellationToken ct) =>
         accounts.UpdateClientAsync(userId, input, ct);
+
+    /* ---------- KYC ---------- */
+
+    /// <summary>The client's KYC details, or 204 No Content if none have been submitted.</summary>
+    [HttpGet("{userId:guid}/kyc")]
+    public async Task<KycDto?> GetKyc(Guid userId, CancellationToken ct)
+    {
+        await accounts.GetClientAsync(userId, ct);
+        return await kyc.GetAsync(userId, ct);
+    }
+
+    [HttpPut("{userId:guid}/kyc")]
+    public Task<KycDto> SaveKyc(Guid userId, KycInput input, CancellationToken ct) => kyc.SaveByAdminAsync(userId, input, ct);
+
+    /// <summary>Approve / reject (or send back to review). Approving also marks the client verified.</summary>
+    [HttpPut("{userId:guid}/kyc/status")]
+    public Task<KycDto> DecideKyc(Guid userId, KycDecision input, CancellationToken ct) => kyc.DecideAsync(userId, input, ct);
 
     /* ---------- Portfolio ---------- */
 

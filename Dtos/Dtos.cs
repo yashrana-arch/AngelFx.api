@@ -11,7 +11,8 @@ public record LoginRequest(
     [Required] string Username,
     [Required] string Password);
 
-public record UserDto(Guid Id, string Name, string Email, string? Phone, string Role, string? ClientCode, bool Verified);
+/// <summary><c>KycStatus</c> is null until the client submits their KYC details.</summary>
+public record UserDto(Guid Id, string Name, string Email, string? Phone, string Role, string? ClientCode, bool Verified, KycStatus? KycStatus);
 
 public record LoginResponse(string Token, UserDto User);
 
@@ -108,6 +109,52 @@ public record WithdrawalInput(
     [Required, MaxLength(300)] string AccountDetails);
 
 public record WithdrawalDecision(WithdrawalStatus Status, [MaxLength(300)] string? AdminNote);
+
+/* ---------- Payment proofs (deposit screenshots) ---------- */
+
+/// <summary>Metadata only; the image is fetched separately from the <c>.../image</c> endpoint.</summary>
+public record PaymentProofDto(
+    Guid Id, Guid UserId, string ClientName, string? ClientCode,
+    decimal? Amount, string Reference, string FileName, int FileSize,
+    PaymentProofStatus Status, string AdminNote, DateTimeOffset CreatedAt, DateTimeOffset? ReviewedAt);
+
+public class PaymentProofUploadForm
+{
+    [Required(ErrorMessage = "Please choose a screenshot to upload")] public IFormFile? Image { get; set; }
+    [Range(0.01, 1_000_000_000, ErrorMessage = "Enter a valid amount")] public decimal? Amount { get; set; }
+    [MaxLength(50)] public string? Reference { get; set; }
+}
+
+public record PaymentProofDecision(PaymentProofStatus Status, [MaxLength(300)] string? AdminNote);
+
+/* ---------- KYC ---------- */
+
+public record KycDto(
+    string FirstName, string LastName, string Email, string Phone, DateOnly DateOfBirth,
+    string AddressLine, string City, string State, string Nationality,
+    string BankName, string AccountHolderName, string AccountNumber, string IfscCode,
+    string AadhaarNumber, string PanNumber,
+    KycStatus Status, string AdminNote, DateTimeOffset SubmittedAt, DateTimeOffset? ReviewedAt);
+
+/// <summary>The KYC form. Number formats (Aadhaar, PAN, IFSC, ...) are checked in KycService after spaces are stripped.</summary>
+public record KycInput(
+    [Required, MaxLength(75)] string FirstName,
+    [Required, MaxLength(75)] string LastName,
+    [Required, EmailAddress, MaxLength(256)] string Email,
+    [Required, MaxLength(20)] string Phone,
+    DateOnly DateOfBirth,
+    [Required, MaxLength(250)] string AddressLine,
+    [Required, MaxLength(100)] string City,
+    [Required, MaxLength(100)] string State,
+    [Required, MaxLength(60)] string Nationality,
+    [Required, MaxLength(100)] string BankName,
+    [Required, MaxLength(150)] string AccountHolderName,
+    [Required, MaxLength(30)] string AccountNumber,
+    [Required, MaxLength(15)] string IfscCode,
+    [Required, MaxLength(20)] string AadhaarNumber,
+    [Required, MaxLength(15)] string PanNumber);
+
+public record KycDecision(KycStatus Status, [MaxLength(300)] string? AdminNote);
 
 /* ---------- Admin: clients ---------- */
 

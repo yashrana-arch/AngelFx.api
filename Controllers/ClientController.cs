@@ -12,9 +12,17 @@ namespace VeltrexAPI.Controllers;
 [ApiController]
 [Route("api/client")]
 [Authorize(Roles = Roles.Client)]
-public class ClientController(AccountService accounts, AppDbContext db) : ControllerBase
+public class ClientController(AccountService accounts, KycService kyc, AppDbContext db) : ControllerBase
 {
     private Guid Me => User.GetUserId();
+
+    /// <summary>The client's KYC details, or 204 No Content if they haven't filled them in yet.</summary>
+    [HttpGet("kyc")]
+    public Task<KycDto?> Kyc(CancellationToken ct) => kyc.GetAsync(Me, ct);
+
+    /// <summary>Submit or update KYC details. Not allowed once approved.</summary>
+    [HttpPut("kyc")]
+    public Task<KycDto> SubmitKyc(KycInput input, CancellationToken ct) => kyc.SubmitAsync(Me, input, ct);
 
     [HttpGet("portfolio")]
     public Task<PortfolioDto> Portfolio(CancellationToken ct) => accounts.GetPortfolioAsync(Me, ct);

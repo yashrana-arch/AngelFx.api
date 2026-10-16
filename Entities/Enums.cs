@@ -12,6 +12,10 @@ public enum LedgerType { Credit, Debit }
 
 public enum WithdrawalStatus { Pending, Approved, Rejected }
 
+public enum KycStatus { Submitted, Approved, Rejected }
+
+public enum PaymentProofStatus { Pending, Approved, Rejected }
+
 public static class Roles
 {
     public const string Admin = "admin";

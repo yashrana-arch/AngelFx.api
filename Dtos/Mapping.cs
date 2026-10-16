@@ -5,7 +5,14 @@ namespace VeltrexAPI.Dtos;
 public static class Mapping
 {
     public static UserDto ToDto(this User u) =>
-        new(u.Id, u.Name, u.Email, u.Phone, u.Role, u.ClientCode, u.Verified);
+        new(u.Id, u.Name, u.Email, u.Phone, u.Role, u.ClientCode, u.Verified, u.Kyc?.Status);
+
+    public static KycDto ToDto(this KycDetails k) =>
+        new(k.FirstName, k.LastName, k.Email, k.Phone, k.DateOfBirth,
+            k.AddressLine, k.City, k.State, k.Nationality,
+            k.BankName, k.AccountHolderName, k.AccountNumber, k.IfscCode,
+            k.AadhaarNumber, k.PanNumber,
+            k.Status, k.AdminNote, k.SubmittedAt, k.ReviewedAt);
 
     public static TradeDto ToDto(this Trade t) =>
         new(t.Id, t.Symbol, t.Side, t.OrderType, t.Quantity, t.EntryPrice, t.ExitPrice, t.Pnl, t.Status, t.Date);

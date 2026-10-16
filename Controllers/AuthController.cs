@@ -18,7 +18,7 @@ public class AuthController(AppDbContext db, TokenService tokens, AccountService
     public async Task<ActionResult<LoginResponse>> Login(LoginRequest req, CancellationToken ct)
     {
         var username = req.Username.Trim();
-        var user = await db.Users.FirstOrDefaultAsync(u => u.Email == username || u.ClientCode == username, ct);
+        var user = await db.Users.Include(u => u.Kyc).FirstOrDefaultAsync(u => u.Email == username || u.ClientCode == username, ct);
 
         if (user == null || !BCrypt.Net.BCrypt.Verify(req.Password, user.PasswordHash))
             throw new ApiException(StatusCodes.Status401Unauthorized, "Invalid credentials");
@@ -41,7 +41,7 @@ public class AuthController(AppDbContext db, TokenService tokens, AccountService
     public async Task<ActionResult<UserDto>> Me(CancellationToken ct)
     {
         var id = User.GetUserId();
-        var user = await db.Users.AsNoTracking().FirstOrDefaultAsync(u => u.Id == id, ct)
+        var user = await db.Users.AsNoTracking().Include(u => u.Kyc).FirstOrDefaultAsync(u => u.Id == id, ct)
             ?? throw new ApiException(StatusCodes.Status401Unauthorized, "Account no longer exists");
         return user.ToDto();
     }
