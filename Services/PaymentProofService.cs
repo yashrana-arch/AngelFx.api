@@ -99,6 +99,38 @@ public class PaymentProofService(AppDbContext db, AccountService accounts)
         return await Project(db.PaymentProofs.Where(p => p.Id == proof.Id)).FirstAsync(ct);
     }
 
+    /* ---------- Delete ---------- */
+
+    /// <summary>
+    /// Client removes their own screenshot, e.g. a wrong image. Only while it's still pending:
+    /// once reviewed it stays as the record behind the admin's decision.
+    /// </summary>
+    public async Task DeleteByClientAsync(Guid userId, Guid proofId, CancellationToken ct)
+    {
+        var status = await db.PaymentProofs
+            .Where(p => p.Id == proofId && p.UserId == userId)
+            .Select(p => (PaymentProofStatus?)p.Status)
+            .FirstOrDefaultAsync(ct)
+            ?? throw ApiException.NotFound("Screenshot not found");
+        if (status != PaymentProofStatus.Pending)
+            throw ApiException.Conflict("This screenshot has already been reviewed, so it can't be deleted");
+
+        // Re-check the status in the delete itself, in case an admin reviewed it in the meantime.
+        var deleted = await db.PaymentProofs
+            .Where(p => p.Id == proofId && p.UserId == userId && p.Status == PaymentProofStatus.Pending)
+            .ExecuteDeleteAsync(ct);
+        if (deleted == 0)
+            throw ApiException.Conflict("This screenshot has already been reviewed, so it can't be deleted");
+    }
+
+    /// <summary>Admin removes any screenshot (spam, duplicates, test uploads). Doesn't touch the ledger.</summary>
+    public async Task DeleteByAdminAsync(Guid userId, Guid proofId, CancellationToken ct)
+    {
+        await accounts.GetClientAsync(userId, ct);
+        var deleted = await db.PaymentProofs.Where(p => p.Id == proofId && p.UserId == userId).ExecuteDeleteAsync(ct);
+        if (deleted == 0) throw ApiException.NotFound("Screenshot not found");
+    }
+
     /* ---------- helpers ---------- */
 
     private static string? DetectImageType(byte[] b)

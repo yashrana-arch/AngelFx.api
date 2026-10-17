@@ -30,6 +30,15 @@ public class PaymentProofsController(PaymentProofService proofs, AccountService 
     public async Task<IActionResult> MyImage(Guid proofId, CancellationToken ct) =>
         Image(await proofs.GetImageAsync(proofId, User.GetUserId(), ct));
 
+    /// <summary>Delete your own screenshot while it's still pending review (409 once reviewed).</summary>
+    [HttpDelete("api/client/payment-proofs/{proofId:guid}")]
+    [Authorize(Roles = Roles.Client)]
+    public async Task<IActionResult> DeleteMine(Guid proofId, CancellationToken ct)
+    {
+        await proofs.DeleteByClientAsync(User.GetUserId(), proofId, ct);
+        return NoContent();
+    }
+
     /* ---------- Admin ---------- */
 
     /// <summary>All clients' screenshots, newest first. <c>?status=PENDING</c> for the review queue.</summary>
@@ -56,6 +65,15 @@ public class PaymentProofsController(PaymentProofService proofs, AccountService 
     [Authorize(Roles = Roles.Admin)]
     public Task<PaymentProofDto> Decide(Guid userId, Guid proofId, PaymentProofDecision input, CancellationToken ct) =>
         proofs.DecideAsync(userId, proofId, input, ct);
+
+    /// <summary>Delete any screenshot, whatever its status. Ledger credits already made are not affected.</summary>
+    [HttpDelete("api/admin/users/{userId:guid}/payment-proofs/{proofId:guid}")]
+    [Authorize(Roles = Roles.Admin)]
+    public async Task<IActionResult> Delete(Guid userId, Guid proofId, CancellationToken ct)
+    {
+        await proofs.DeleteByAdminAsync(userId, proofId, ct);
+        return NoContent();
+    }
 
     private FileContentResult Image((byte[] Data, string ContentType) img)
     {
