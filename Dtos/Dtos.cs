@@ -127,6 +127,25 @@ public class PaymentProofUploadForm
 
 public record PaymentProofDecision(PaymentProofStatus Status, [MaxLength(300)] string? AdminNote);
 
+/* ---------- Support chat ---------- */
+
+public record SupportMessageDto(long Id, bool FromAdmin, string Body, DateTimeOffset CreatedAt, DateTimeOffset? ReadAt);
+
+/// <summary>
+/// Messages in one conversation (all recent ones, or only those after <c>afterId</c> when polling).
+/// <c>ReadUpTo</c> is the highest id of the caller's own messages the other side has read, for "Seen" markers.
+/// </summary>
+public record SupportThreadDto(List<SupportMessageDto> Messages, long? ReadUpTo);
+
+public record SupportMessageInput([Required(ErrorMessage = "Type a message"), MaxLength(2000, ErrorMessage = "Message is too long (max 2000 characters)")] string Body);
+
+/// <summary>A row in the admin inbox: one per client who has a conversation.</summary>
+public record SupportConversationDto(
+    Guid UserId, string ClientName, string? ClientCode, string Email,
+    string LastMessage, bool LastFromAdmin, DateTimeOffset LastAt, int Unread);
+
+public record UnreadCountDto(int Count);
+
 /* ---------- KYC ---------- */
 
 public record KycDto(

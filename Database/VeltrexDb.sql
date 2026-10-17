@@ -159,6 +159,22 @@ CREATE TABLE IF NOT EXISTS `PaymentProofs` (
     CONSTRAINT `FK_PaymentProofs_Users_UserId` FOREIGN KEY (`UserId`) REFERENCES `Users` (`Id`) ON DELETE CASCADE
 ) CHARACTER SET=utf8mb4;
 
+-- Support chat: one conversation per client (UserId); FromAdmin = 1 for replies from the support team.
+CREATE TABLE IF NOT EXISTS `SupportMessages` (
+    `Id` bigint NOT NULL AUTO_INCREMENT,
+    `UserId` char(36) COLLATE ascii_general_ci NOT NULL,
+    `FromAdmin` tinyint(1) NOT NULL,
+    `SenderId` char(36) COLLATE ascii_general_ci NOT NULL,
+    `Body` varchar(2000) CHARACTER SET utf8mb4 NOT NULL,
+    `CreatedAt` datetime(6) NOT NULL,
+    `ReadAt` datetime(6) NULL,
+    CONSTRAINT `PK_SupportMessages` PRIMARY KEY (`Id`),
+    INDEX `IX_SupportMessages_UserId_Id` (`UserId`, `Id`),
+    INDEX `IX_SupportMessages_UserId_FromAdmin_ReadAt` (`UserId`, `FromAdmin`, `ReadAt`),
+    INDEX `IX_SupportMessages_FromAdmin_ReadAt` (`FromAdmin`, `ReadAt`),
+    CONSTRAINT `FK_SupportMessages_Users_UserId` FOREIGN KEY (`UserId`) REFERENCES `Users` (`Id`) ON DELETE CASCADE
+) CHARACTER SET=utf8mb4;
+
 -- ---------------------------------------------------------------------
 -- Shared by all clients
 -- ---------------------------------------------------------------------
@@ -210,4 +226,5 @@ INSERT IGNORE INTO `__EFMigrationsHistory` (`MigrationId`, `ProductVersion`) VAL
     ('20261010134409_InitialCreate', '9.0.20'),
     ('20261011093852_CommonPaymentSettings', '9.0.20'),
     ('20261015125527_AddKycDetails', '9.0.20'),
-    ('20261015153639_AddPaymentProofs', '9.0.20');
+    ('20261015153639_AddPaymentProofs', '9.0.20'),
+    ('20261017084610_AddSupportMessages', '9.0.20');

@@ -7,6 +7,9 @@ public static class Mapping
     public static UserDto ToDto(this User u) =>
         new(u.Id, u.Name, u.Email, u.Phone, u.Role, u.ClientCode, u.Verified, u.Kyc?.Status);
 
+    public static SupportMessageDto ToDto(this SupportMessage m) =>
+        new(m.Id, m.FromAdmin, m.Body, m.CreatedAt, m.ReadAt);
+
     public static KycDto ToDto(this KycDetails k) =>
         new(k.FirstName, k.LastName, k.Email, k.Phone, k.DateOfBirth,
             k.AddressLine, k.City, k.State, k.Nationality,

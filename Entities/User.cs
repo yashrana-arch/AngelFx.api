@@ -24,4 +24,5 @@ public class User
     public List<LedgerEntry> LedgerEntries { get; set; } = [];
     public List<Withdrawal> Withdrawals { get; set; } = [];
     public List<PaymentProof> PaymentProofs { get; set; } = [];
+    public List<SupportMessage> SupportMessages { get; set; } = [];
 }

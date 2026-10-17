@@ -68,6 +68,7 @@ builder.Services.AddScoped<TokenService>();
 builder.Services.AddScoped<AccountService>();
 builder.Services.AddScoped<KycService>();
 builder.Services.AddScoped<PaymentProofService>();
+builder.Services.AddScoped<SupportService>();
 builder.Services.AddScoped<PaymentService>();
 builder.Services.AddScoped<MarketService>();
 builder.Services.AddSingleton<QrStorage>();

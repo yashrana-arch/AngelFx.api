@@ -14,6 +14,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
     public DbSet<Withdrawal> Withdrawals => Set<Withdrawal>();
     public DbSet<KycDetails> KycDetails => Set<KycDetails>();
     public DbSet<PaymentProof> PaymentProofs => Set<PaymentProof>();
+    public DbSet<SupportMessage> SupportMessages => Set<SupportMessage>();
     public DbSet<MarketIndex> MarketIndices => Set<MarketIndex>();
     public DbSet<Stock> Stocks => Set<Stock>();
 
@@ -46,6 +47,7 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.HasMany(x => x.LedgerEntries).WithOne(x => x.User).HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
             e.HasMany(x => x.Withdrawals).WithOne(x => x.User).HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
             e.HasMany(x => x.PaymentProofs).WithOne(x => x.User).HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
+            e.HasMany(x => x.SupportMessages).WithOne(x => x.User).HasForeignKey(x => x.UserId).OnDelete(DeleteBehavior.Cascade);
         });
 
         b.Entity<Portfolio>(e =>
@@ -126,6 +128,16 @@ public class AppDbContext(DbContextOptions<AppDbContext> options) : DbContext(op
             e.Property(x => x.AdminNote).HasMaxLength(300);
             e.HasIndex(x => new { x.UserId, x.CreatedAt });
             e.HasIndex(x => new { x.Status, x.CreatedAt });
+        });
+
+        b.Entity<SupportMessage>(e =>
+        {
+            e.Property(x => x.Body).HasMaxLength(2000);
+            // Thread reads ("after id N") and unread counts per conversation.
+            e.HasIndex(x => new { x.UserId, x.Id });
+            e.HasIndex(x => new { x.UserId, x.FromAdmin, x.ReadAt });
+            // Admin-wide unread badge.
+            e.HasIndex(x => new { x.FromAdmin, x.ReadAt });
         });
 
         b.Entity<MarketIndex>(e =>

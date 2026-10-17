@@ -412,6 +412,45 @@ namespace VeltrexAPI.Data.Migrations
                     b.ToTable("Stocks");
                 });
 
+            modelBuilder.Entity("VeltrexAPI.Entities.SupportMessage", b =>
+                {
+                    b.Property<long>("Id")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bigint");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<long>("Id"));
+
+                    b.Property<string>("Body")
+                        .IsRequired()
+                        .HasMaxLength(2000)
+                        .HasColumnType("varchar(2000)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<bool>("FromAdmin")
+                        .HasColumnType("tinyint(1)");
+
+                    b.Property<DateTimeOffset?>("ReadAt")
+                        .HasColumnType("datetime(6)");
+
+                    b.Property<Guid>("SenderId")
+                        .HasColumnType("char(36)");
+
+                    b.Property<Guid>("UserId")
+                        .HasColumnType("char(36)");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("FromAdmin", "ReadAt");
+
+                    b.HasIndex("UserId", "Id");
+
+                    b.HasIndex("UserId", "FromAdmin", "ReadAt");
+
+                    b.ToTable("SupportMessages");
+                });
+
             modelBuilder.Entity("VeltrexAPI.Entities.Trade", b =>
                 {
                     b.Property<Guid>("Id")
@@ -611,6 +650,17 @@ namespace VeltrexAPI.Data.Migrations
                     b.Navigation("User");
                 });
 
+            modelBuilder.Entity("VeltrexAPI.Entities.SupportMessage", b =>
+                {
+                    b.HasOne("VeltrexAPI.Entities.User", "User")
+                        .WithMany("SupportMessages")
+                        .HasForeignKey("UserId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+
+                    b.Navigation("User");
+                });
+
             modelBuilder.Entity("VeltrexAPI.Entities.Trade", b =>
                 {
                     b.HasOne("VeltrexAPI.Entities.User", "User")
@@ -644,6 +694,8 @@ namespace VeltrexAPI.Data.Migrations
                     b.Navigation("Portfolio");
 
                     b.Navigation("Positions");
+
+                    b.Navigation("SupportMessages");
 
                     b.Navigation("Trades");
 

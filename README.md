@@ -91,6 +91,7 @@ The script creates every table:
 | `Withdrawals` | Withdrawal requests and the admin's decision |
 | `KycDetails` | One row per client once they submit KYC: personal details, address, bank account, Aadhaar and PAN, review status (`Submitted`, `Approved`, `Rejected`) and admin note |
 | `PaymentProofs` | Deposit screenshots clients upload after paying. The image bytes are stored in the row (`MEDIUMBLOB`, max 5 MB), with the uploader, optional amount and UTR reference, review status (`Pending`, `Approved`, `Rejected`) and admin note |
+| `SupportMessages` | Support chat: one conversation per client (`UserId`). `FromAdmin` marks replies from the support team, `SenderId` is who sent it, `ReadAt` is when the other side read it. Ids auto-increment so the apps can poll for new messages |
 | `MarketIndices`, `Stocks` | Market watch data shared by all clients |
 
 ## Endpoints
@@ -124,6 +125,16 @@ All routes are under `/api`. Errors are always returned as `{ "message": "..." }
 | GET | `/admin/payment-proofs` (`?status=PENDING` for the review queue) | admin |
 | GET | `/admin/users/{id}/payment-proofs`, `/admin/users/{id}/payment-proofs/{proofId}/image` | admin |
 | PUT | `/admin/users/{id}/payment-proofs/{proofId}` (`{ status, adminNote }`; approving doesn't credit the ledger) | admin |
+
+| GET, POST | `/client/support/messages` (GET `?afterId=` returns only newer messages; POST `{ body }`) | client |
+| POST | `/client/support/read` (marks support replies read) | client |
+| GET | `/client/support/unread` → `{ count }` | client |
+| GET | `/admin/support/conversations` (inbox: last message + unread count per client) | admin |
+| GET | `/admin/support/unread` → `{ count }` (all clients) | admin |
+| GET, POST | `/admin/users/{id}/support/messages` (same as the client's) | admin |
+| POST | `/admin/users/{id}/support/read` | admin |
+
+Support thread responses are `{ messages, readUpTo }`, where `readUpTo` is the highest id of the caller's own messages the other side has read (for "Seen" markers). The apps poll every few seconds; there are no websockets.
 
 Screenshot images are only served through those authenticated `/image` endpoints, so the frontend fetches them with the token rather than using a plain `<img src>`.
 
