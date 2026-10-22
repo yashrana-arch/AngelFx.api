@@ -100,6 +100,11 @@ public class PaymentUpdateForm
     public IFormFile? QrImage { get; set; }
 }
 
+/// <summary>Admin credits a client's account, e.g. after confirming their payment.</summary>
+public record AddFundsInput(
+    [Range(0.01, double.MaxValue, ErrorMessage = "Enter a valid amount")] decimal Amount,
+    [MaxLength(250)] string? Description);
+
 /* ---------- Withdrawals ---------- */
 
 public record WithdrawalDto(Guid Id, decimal Amount, string AccountDetails, WithdrawalStatus Status, string AdminNote, DateTimeOffset CreatedAt);

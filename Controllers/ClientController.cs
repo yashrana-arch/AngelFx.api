@@ -31,7 +31,7 @@ public class ClientController(AccountService accounts, KycService kyc, AppDbCont
     public Task<List<TradeDto>> Trades(CancellationToken ct) => accounts.GetTradesAsync(Me, ct);
 
     [HttpGet("ledger")]
-    public Task<List<LedgerEntryDto>> Ledger(CancellationToken ct) => accounts.GetLedgerAsync(Me, ct);
+    public Task<List<LedgerEntryDto>> Ledger(CancellationToken ct) => accounts.GetFullLedgerAsync(Me, ct);
 
     [HttpGet("withdrawals")]
     public Task<List<WithdrawalDto>> Withdrawals(CancellationToken ct) => accounts.GetWithdrawalsAsync(Me, ct);

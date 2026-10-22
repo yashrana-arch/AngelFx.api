@@ -94,6 +94,11 @@ public class AdminClientsController(AccountService accounts, KycService kyc) : C
     public Task<List<LedgerEntryDto>> SaveLedger(Guid userId, List<LedgerEntryDto> entries, CancellationToken ct) =>
         accounts.SaveLedgerAsync(userId, entries, ct);
 
+    /// <summary>Credit the client's account (adds a ledger entry dated today).</summary>
+    [HttpPost("{userId:guid}/funds")]
+    public Task<LedgerEntryDto> AddFunds(Guid userId, AddFundsInput input, CancellationToken ct) =>
+        accounts.AddFundsAsync(userId, input, ct);
+
     /* ---------- Withdrawals ---------- */
 
     [HttpGet("{userId:guid}/withdrawals")]
