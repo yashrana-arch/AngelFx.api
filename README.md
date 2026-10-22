@@ -94,6 +94,21 @@ The script creates every table:
 | `SupportMessages` | Support chat: one conversation per client (`UserId`). `FromAdmin` marks replies from the support team, `SenderId` is who sent it, `ReadAt` is when the other side read it. Ids auto-increment so the apps can poll for new messages |
 | `MarketIndices`, `Stocks` | Market watch data shared by all clients |
 
+## Account figures
+
+The portfolio figures aren't stored; `AccountService` calculates them on every read, so the admin only manages funds and trades. The `Portfolios` table only supplies the announcement, and the `Positions` table and stored balance columns are no longer used.
+
+| Figure | Calculation |
+| ------ | ----------- |
+| Ledger balance | ledger entries (funds added, adjustments) + P&L of closed trades − approved withdrawals |
+| M2M | P&L of active trades |
+| Margin used | entry price × quantity of active and pending trades |
+| Margin available | ledger balance − margin used − pending withdrawals + M2M losses (unrealised profit doesn't count until the trade closes) |
+| Today P&L | M2M + P&L of closed trades dated today (IST) |
+| Positions | the active trades |
+
+`GET /client/ledger` returns the manual entries plus automatic rows for approved withdrawals and closed-trade P&L. Withdrawal requests, and approving them, are checked against the calculated margin available.
+
 ## Endpoints
 
 All routes are under `/api`. Errors are always returned as `{ "message": "..." }`. Enum values are UPPER_CASE strings (`BUY`, `ACTIVE`, `CREDIT`, ...).
@@ -111,7 +126,9 @@ All routes are under `/api`. Errors are always returned as `{ "message": "..." }
 | POST | `/client/withdrawals`, `/client/change-password` | client |
 | GET, POST | `/admin/users` | admin |
 | GET, PUT | `/admin/users/{id}` | admin |
-| GET, PUT | `/admin/users/{id}/portfolio`, `/admin/users/{id}/ledger` | admin |
+| GET, PUT | `/admin/users/{id}/portfolio` (figures are calculated, see below; PUT only saves the announcement `message`) | admin |
+| GET, PUT | `/admin/users/{id}/ledger` (manual entries only: funds added and adjustments) | admin |
+| POST | `/admin/users/{id}/funds` (`{ amount, description? }`; adds a CREDIT ledger entry dated today) | admin |
 | GET, POST | `/admin/users/{id}/trades` | admin |
 | PUT, DELETE | `/admin/users/{id}/trades/{tradeId}` | admin |
 | GET | `/admin/users/{id}/withdrawals` | admin |
@@ -122,9 +139,11 @@ All routes are under `/api`. Errors are always returned as `{ "message": "..." }
 
 | GET, POST | `/client/payment-proofs` (POST is multipart: `image` (PNG/JPG/WEBP/GIF, max 5 MB), `amount?`, `reference?`) | client |
 | GET | `/client/payment-proofs/{proofId}/image` | client |
+| DELETE | `/client/payment-proofs/{proofId}` (only while pending; 409 once reviewed) | client |
 | GET | `/admin/payment-proofs` (`?status=PENDING` for the review queue) | admin |
 | GET | `/admin/users/{id}/payment-proofs`, `/admin/users/{id}/payment-proofs/{proofId}/image` | admin |
 | PUT | `/admin/users/{id}/payment-proofs/{proofId}` (`{ status, adminNote }`; approving doesn't credit the ledger) | admin |
+| DELETE | `/admin/users/{id}/payment-proofs/{proofId}` (any status; ledger credits are not affected) | admin |
 
 | GET, POST | `/client/support/messages` (GET `?afterId=` returns only newer messages; POST `{ body }`) | client |
 | POST | `/client/support/read` (marks support replies read) | client |
