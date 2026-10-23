@@ -5,7 +5,7 @@ namespace VeltrexAPI.Dtos;
 public static class Mapping
 {
     public static UserDto ToDto(this User u) =>
-        new(u.Id, u.Name, u.Email, u.Phone, u.Role, u.ClientCode, u.Verified, u.Kyc?.Status);
+        new(u.Id, u.Name, u.Email, u.Phone, u.Role, u.ClientCode, u.Verified, u.Kyc?.Status, u.Disabled);
 
     public static SupportMessageDto ToDto(this SupportMessage m) =>
         new(m.Id, m.FromAdmin, m.Body, m.CreatedAt, m.ReadAt);

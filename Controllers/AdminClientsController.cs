@@ -27,6 +27,11 @@ public class AdminClientsController(AccountService accounts, KycService kyc) : C
     public Task<UserDto> Update(Guid userId, ClientUpdate input, CancellationToken ct) =>
         accounts.UpdateClientAsync(userId, input, ct);
 
+    /// <summary>Disable (or re-enable) a client's account.</summary>
+    [HttpPut("{userId:guid}/status")]
+    public Task<UserDto> SetStatus(Guid userId, ClientStatusInput input, CancellationToken ct) =>
+        accounts.SetClientDisabledAsync(userId, input.Disabled, ct);
+
     /* ---------- KYC ---------- */
 
     /// <summary>The client's KYC details, or 204 No Content if none have been submitted.</summary>

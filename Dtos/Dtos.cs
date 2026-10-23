@@ -12,7 +12,7 @@ public record LoginRequest(
     [Required] string Password);
 
 /// <summary><c>KycStatus</c> is null until the client submits their KYC details.</summary>
-public record UserDto(Guid Id, string Name, string Email, string? Phone, string Role, string? ClientCode, bool Verified, KycStatus? KycStatus);
+public record UserDto(Guid Id, string Name, string Email, string? Phone, string Role, string? ClientCode, bool Verified, KycStatus? KycStatus, bool Disabled);
 
 public record LoginResponse(string Token, UserDto User);
 
@@ -188,6 +188,8 @@ public record NewClientInput(
     [MaxLength(20)] string? Phone,
     [MaxLength(30)] string? ClientCode,
     [Required, MinLength(6)] string Password);
+
+public record ClientStatusInput(bool Disabled);
 
 public record ClientUpdate(
     [Required, MaxLength(150)] string Name,

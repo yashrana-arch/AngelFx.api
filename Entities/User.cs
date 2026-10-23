@@ -14,6 +14,9 @@ public class User
     public string Role { get; set; } = Roles.Client;
 
     public bool Verified { get; set; }
+
+    /// <summary>Set by the admin. A disabled user can't log in, and their email / phone can't be used to sign up again.</summary>
+    public bool Disabled { get; set; }
     public string PasswordHash { get; set; } = "";
     public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 

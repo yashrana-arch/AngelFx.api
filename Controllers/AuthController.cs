@@ -22,6 +22,8 @@ public class AuthController(AppDbContext db, TokenService tokens, AccountService
 
         if (user == null || !BCrypt.Net.BCrypt.Verify(req.Password, user.PasswordHash))
             throw new ApiException(StatusCodes.Status401Unauthorized, "Invalid credentials");
+        if (user.Disabled)
+            throw new ApiException(StatusCodes.Status401Unauthorized, "This account doesn't exist");
 
         return new LoginResponse(tokens.CreateToken(user), user.ToDto());
     }
@@ -41,7 +43,7 @@ public class AuthController(AppDbContext db, TokenService tokens, AccountService
     public async Task<ActionResult<UserDto>> Me(CancellationToken ct)
     {
         var id = User.GetUserId();
-        var user = await db.Users.AsNoTracking().Include(u => u.Kyc).FirstOrDefaultAsync(u => u.Id == id, ct)
+        var user = await db.Users.AsNoTracking().Include(u => u.Kyc).FirstOrDefaultAsync(u => u.Id == id && !u.Disabled, ct)
             ?? throw new ApiException(StatusCodes.Status401Unauthorized, "Account no longer exists");
         return user.ToDto();
     }

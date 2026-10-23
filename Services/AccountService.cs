@@ -23,15 +23,23 @@ public class AccountService(AppDbContext db)
             .Where(u => u.Role == Roles.Client)
             .OrderBy(u => u.Name)
             .Select(u => new UserDto(u.Id, u.Name, u.Email, u.Phone, u.Role, u.ClientCode, u.Verified,
-                u.Kyc != null ? u.Kyc.Status : null))
+                u.Kyc != null ? u.Kyc.Status : null, u.Disabled))
             .ToListAsync(ct);
 
     public async Task<UserDto> CreateClientAsync(NewClientInput input, CancellationToken ct) =>
         (await AddClientAsync(input.Name, input.Email, input.Phone, input.ClientCode, input.Password, ct)).ToDto();
 
-    /// <summary>Self sign-up: an unverified client without a User ID (the admin can assign one later).</summary>
-    public Task<User> RegisterClientAsync(RegisterRequest input, CancellationToken ct) =>
-        AddClientAsync(input.Name, input.Email, input.Phone, null, input.Password, ct);
+    /// <summary>Self sign-up: an unverified client without a User ID (the admin can assign one later).
+    /// The email / phone of a disabled account can't be reused.</summary>
+    public async Task<User> RegisterClientAsync(RegisterRequest input, CancellationToken ct)
+    {
+        var email = input.Email.Trim();
+        var phone = Blank(input.Phone);
+        if (await db.Users.AnyAsync(u => u.Disabled && (u.Email == email || (phone != null && u.Phone == phone)), ct))
+            throw ApiException.Conflict("This email or phone number can't be used");
+
+        return await AddClientAsync(input.Name, email, phone, null, input.Password, ct);
+    }
 
     private async Task<User> AddClientAsync(string name, string email, string? phone, string? clientCode, string password, CancellationToken ct)
     {
@@ -68,6 +76,15 @@ public class AccountService(AppDbContext db)
         if (!string.IsNullOrEmpty(input.Password))
             user.PasswordHash = BCrypt.Net.BCrypt.HashPassword(input.Password);
 
+        await db.SaveChangesAsync(ct);
+        return user.ToDto();
+    }
+
+    /// <summary>Disable / re-enable a client. A disabled client can't log in and their current session stops working.</summary>
+    public async Task<UserDto> SetClientDisabledAsync(Guid userId, bool disabled, CancellationToken ct)
+    {
+        var user = await GetClientAsync(userId, ct);
+        user.Disabled = disabled;
         await db.SaveChangesAsync(ct);
         return user.ToDto();
     }

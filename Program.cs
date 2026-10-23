@@ -48,6 +48,14 @@ builder.Services
         // Same { message } shape as every other error.
         o.Events = new JwtBearerEvents
         {
+            // A disabled user's token stops working straight away instead of when it expires.
+            OnTokenValidated = async ctx =>
+            {
+                var id = Guid.TryParse(ctx.Principal?.FindFirst("sub")?.Value, out var g) ? g : Guid.Empty;
+                var db = ctx.HttpContext.RequestServices.GetRequiredService<AppDbContext>();
+                if (!await db.Users.AnyAsync(u => u.Id == id && !u.Disabled, ctx.HttpContext.RequestAborted))
+                    ctx.Fail("Account disabled");
+            },
             OnChallenge = async ctx =>
             {
                 ctx.HandleResponse();
